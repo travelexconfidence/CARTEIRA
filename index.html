@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <title>Console Financeiro - Travelex Cloud</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <style>
+        :root {
+            --bg: #f0f2f5; --card: #ffffff; --primary: #002b5b;
+            --accent: #0056b3; --success: #008f39; --danger: #d80000;
+            --border: #ced4da; --text: #1a1a1a; --monthly: #6c757d;
+        }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; padding: 8px; color: var(--text); font-size: 11px; }
+        
+        #lock-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--primary); color: white;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 9999;
+        }
+        #lock-screen input { padding: 12px; border-radius: 4px; border: none; margin-top: 15px; width: 220px; text-align: center; font-size: 14px; }
+        #lock-screen button { margin-top: 15px; padding: 10px 30px; cursor: pointer; background: var(--success); color: white; border: none; border-radius: 4px; font-weight: bold; text-transform: uppercase; }
+        .hidden { display: none !important; }
+        
+        .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; background: var(--primary); padding: 8px 15px; border-radius: 6px; color: white; }
+        .logo-area { display: flex; align-items: center; gap: 12px; }
+        .logo-wrapper { background: white; padding: 4px; border-radius: 4px; display: flex; align-items: center; justify-content: center; min-width: 80px; height: 35px; }
+        .logo-wrapper img { max-height: 30px; max-width: 120px; object-fit: contain; }
+        .app-title { font-size: 15px; font-weight: bold; text-transform: uppercase; border-left: 1px solid rgba(255,255,255,0.3); padding-left: 12px; }
+        
+        .dashboard { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 8px; }
+        @media (max-width: 1000px) { .dashboard { grid-template-columns: repeat(3, 1fr); } }
+
+        .card { background: var(--card); padding: 10px; border-radius: 6px; border: 1px solid var(--border); box-shadow: 2px 2px 5px rgba(0,0,0,0.05); }
+        .card label { font-size: 9px; color: #555; font-weight: bold; text-transform: uppercase; display: block; margin-bottom: 4px; }
+        .card .value { font-size: 14px; font-weight: 800; color: var(--primary); }
+        .card .sub-value { font-size: 9px; color: #777; display: block; margin-top: 2px; }
+        
+        .venc-list { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+        .venc-badge { background: #e9ecef; padding: 2px 6px; border-radius: 3px; border: 1px solid #adb5bd; font-size: 10px; font-weight: bold; color: var(--primary); }
+        
+        /* Estilos dos Cards de Resumo */
+        .resumo-card, .mensal-card { margin-bottom: 10px; background: #ffffff; border-radius: 6px; overflow: hidden; box-shadow: 2px 2px 5px rgba(0,0,0,0.05); }
+        .resumo-card { border: 2px solid var(--accent); }
+        .mensal-card { border: 2px solid var(--monthly); }
+        
+        .resumo-header { background: var(--accent); color: white; padding: 6px 12px; font-weight: bold; font-size: 11px; text-transform: uppercase; }
+        .mensal-header { background: var(--monthly); color: white; padding: 6px 12px; font-weight: bold; font-size: 11px; text-transform: uppercase; }
+        
+        .resumo-table { width: 100%; border-collapse: collapse; }
+        .resumo-table th { background: #f8f9fa; color: #333; font-size: 9px; padding: 6px; border-bottom: 2px solid #ddd; text-align: left; }
+        .resumo-table td { padding: 6px; border-bottom: 1px solid #eee; font-size: 10px; font-weight: bold; }
+        
+        .toolbar { background: #e9ecef; padding: 8px; border-radius: 6px; border: 1px solid var(--border); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+        .btn { padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; border: 1px solid #adb5bd; font-size: 10px; background: white; text-transform: uppercase; }
+        .btn-import { background: var(--success); color: white; border: none; }
+        
+        .table-container { background: var(--card); border-radius: 6px; border: 1px solid var(--border); overflow: auto; max-height: 45vh; }
+        table { width: 100%; border-collapse: collapse; }
+        thead th { position: sticky; top: 0; background: #343a40; color: white; font-size: 9px; padding: 6px 4px; text-transform: uppercase; z-index: 5; }
+        tbody td { padding: 4px 6px; border-bottom: 1px solid #dee2e6; text-align: right; white-space: nowrap; font-size: 10px; font-weight: 500; }
+        .row-group { background: #ced4da !important; font-weight: 900; text-align: left !important; color: #000; }
+        .money-col { color: #004085; font-weight: bold; }
+    </style>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <div id="lock-screen">
+        <div style="background:white; padding:15px; border-radius:8px; margin-bottom:20px;">
+            <img src="https://www.travelexbank.com.br/wp-content/uploads/2021/05/logo-travelex-bank.png" style="width:180px;">
+        </div>
+        <input type="password" id="passInput" placeholder="Digite a Senha">
+        <button onclick="checkPass()">Acessar</button>
+        <p id="errorMsg" style="color: #ff9999; margin-top: 12px; display: none;">Acesso Negado.</p>
+    </div>
+
+    <div class="header">
+        <div class="logo-area">
+            <div class="logo-wrapper"><img id="logoImg" src="https://www.travelexbank.com.br/wp-content/uploads/2021/05/logo-travelex-bank.png"></div>
+            <div class="app-title">Console Financeiro</div>
+        </div>
+        <div style="display:flex; gap: 8px;">
+            <label class="btn btn-logo" style="background:#343a40; color:white">📷 LOGO <input type="file" style="display:none" accept="image/*" onchange="upLogo(this)"></label>
+            <button onclick="clearDB()" class="btn" style="color:red">LIMPAR NUVEM</button>
+        </div>
+    </div>
+
+    <div class="toolbar">
+        <label class="btn btn-import">📥 IMPORTAR EXCEL <input type="file" id="fileInp" style="display:none" onchange="readXls(this.files)" multiple></label>
+        <div style="flex-grow:1"></div>
+        <input type="date" id="d1"> <span>▶</span> <input type="date" id="d2">
+        <button onclick="draw()" class="btn" style="background:var(--primary); color:white">FILTRAR AGORA</button>
+    </div>
+
+    <div class="dashboard">
+        <div class="card"><label>POSIÇÃO TOTAL</label><div id="vTotal" class="value">R$ 0,00</div></div>
+        <div class="card"><label>RENDIMENTO ANO (2026)</label><div id="vGanhoAno" class="value">R$ 0,00</div></div>
+        <div class="card"><label>RENDIMENTO NO PERÍODO</label><div id="vGanho" class="value">R$ 0,00</div></div>
+        <div class="card"><label>MÉDIA DIÁRIA (ÚTEIS)</label><div id="vMedia" class="value">R$ 0,00</div><div id="vDiasUteis" class="sub-value">-- dias</div></div>
+        <div class="card"><label>DATA DA POSIÇÃO</label><div id="vDataPos" class="value">--/--/----</div></div>
+        <div class="card"><label>VENCIMENTOS (QTDE)</label><div id="vVenc" class="venc-list">...</div></div>
+    </div>
+
+    <div class="resumo-card">
+        <div class="resumo-header">RESUMO DA CARTEIRA</div>
+        <table class="resumo-table">
+            <thead>
+                <tr>
+                    <th style="width: 120px;">VENCIMENTO</th>
+                    <th>POSIÇÃO</th>
+                    <th style="width: 120px; text-align: right;">QUANTIDADE</th>
+                    <th style="width: 180px; text-align: right;">SOMA VL 238</th>
+                </tr>
+            </thead>
+            <tbody id="resumoBody"></tbody>
+        </table>
+    </div>
+
+    <div class="mensal-card">
+        <div class="mensal-header">RESUMO MENSAL (FECHAMENTO)</div>
+        <table class="resumo-table">
+            <thead>
+                <tr>
+                    <th>MÊS/ANO</th>
+                    <th style="text-align: right;">RENDIMENTO TOTAL NO MÊS</th>
+                    <th style="text-align: right;">SALDO FINAL DO MÊS</th>
+                </tr>
+            </thead>
+            <tbody id="mensalBody"></tbody>
+        </table>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead id="hTab"></thead>
+            <tbody id="bTab"></tbody>
+        </table>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBcHysAwUcD9ii0UmDJGnNkHC69Y3WCbQk",
+            authDomain: "carteira-5cef6.firebaseapp.com",
+            projectId: "carteira-5cef6",
+            storageBucket: "carteira-5cef6.firebasestorage.app",
+            messagingSenderId: "464672323459",
+            appId: "1:464672323459:web:923105a30a061700a7e8b6"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const docRef = db.collection("registros").doc("consolidado_v32");
+        let raw = [];
+
+        function checkPass() {
+            if(document.getElementById('passInput').value === "123456") {
+                document.getElementById('lock-screen').classList.add('hidden');
+                loadFromCloud();
+            } else { document.getElementById('errorMsg').style.display = 'block'; }
+        }
+
+        async function loadFromCloud() {
+            try {
+                const doc = await docRef.get();
+                if (doc.exists) { raw = doc.data().conteudo || []; draw(); }
+            } catch (e) { console.error("Erro Nuvem:", e); }
+            const savedLogo = localStorage.getItem('tvx_logo_v32');
+            if(savedLogo) document.getElementById('logoImg').src = savedLogo;
+        }
+
+        async function saveToCloud() { try { await docRef.set({ conteudo: raw }); } catch (e) {}}
+
+        function upLogo(i) {
+            const f = i.files[0]; if(!f) return;
+            const r = new FileReader();
+            r.onload = (e) => { document.getElementById('logoImg').src = e.target.result; localStorage.setItem('tvx_logo_v32', e.target.result); };
+            r.readAsDataURL(f);
+        }
+
+        function n(v) {
+            if(!v) return 0; if(typeof v === 'number') return v;
+            let s = String(v).replace('R$', '').replace(/\./g, '').replace(',', '.').replace(/[^\d.-]/g, '').trim();
+            return parseFloat(s) || 0;
+        }
+
+        function dIso(v) {
+            if(!v) return ""; 
+            if(typeof v === 'number') return new Date(Math.round((v-25569)*86400*1000)).toISOString().split('T')[0];
+            let s = String(v).trim(); 
+            if(s.includes('/')) { let p = s.split('/'); return p[0].length===4 ? `${p[0]}-${p[1]}-${p[2]}` : `${p[2]}-${p[1]}-${p[0]}`; }
+            return s;
+        }
+
+        function br(d) { return d ? d.split('-').reverse().join('/') : "--"; }
+
+        function contarDiasUteis(inicio, fim) {
+            let dIni = new Date(inicio + "T00:00:00");
+            let dFim = new Date(fim + "T00:00:00");
+            let count = 0;
+            let atual = new Date(dIni);
+            while (atual <= dFim) {
+                let diaSemana = atual.getDay();
+                if (diaSemana !== 0 && diaSemana !== 6) count++;
+                atual.setDate(atual.getDate() + 1);
+            }
+            return count || 1;
+        }
+
+        function readXls(fs) {
+            if(!fs.length) return;
+            Array.from(fs).forEach(f => {
+                const r = new FileReader();
+                r.onload = (e) => {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type:'array'});
+                    const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+                    const m = rows.map(i => ({
+                        ...i,
+                        _d: dIso(i['DT. ATUAL'] || i['DATA'] || ""),
+                        _v: n(i['VL 238'] || 0),
+                        _q: n(i['QUANTIDADE'] || i['QTDE'] || 0),
+                        _vc: dIso(i['DT. VENCTO.'] || ""),
+                        'PU 238': i['PU 238'] || i['PU_238'] || 0,
+                        'PU 550': i['PU 550'] || i['PU_550'] || 0,
+                        'PU MERCADO': i['PU MERCADO'] || i['PU_MERCADO'] || 0,
+                        'FINALIDADE ESTOQUE': i['FINALIDADE ESTOQUE'] || i['FINALIDADE_ESTOQUE'] || '-'
+                    })).filter(x => x._d && x._v !== 0);
+                    raw = raw.concat(m);
+                    saveToCloud();
+                    draw();
+                };
+                r.readAsArrayBuffer(f);
+            });
+            document.getElementById('fileInp').value = "";
+        }
+
+        function calcularRendimento(datas) {
+            let totalRendimento = 0;
+            datas.forEach(dataHoje => {
+                let idx = [...new Set(raw.map(l => l._d))].sort().indexOf(dataHoje);
+                if (idx > 0) {
+                    let dataOntem = [...new Set(raw.map(l => l._d))].sort()[idx-1];
+                    let hoje = raw.filter(l => l._d === dataHoje);
+                    let ontem = raw.filter(l => l._d === dataOntem);
+                    hoje.forEach(h => {
+                        let o = ontem.find(p => p['PAPEL'] === h['PAPEL'] && p['VEÍCULO LEGAL'] === h['VEÍCULO LEGAL'] && p['POSIÇÃO'] === h['POSIÇÃO']);
+                        if (o) totalRendimento += n(h._q) * (n(h['PU 238']) - n(o['PU 238']));
+                    });
+                }
+            });
+            return totalRendimento;
+        }
+
+        function draw() {
+            if(!raw.length) return;
+            const fi = document.getElementById('d1').value;
+            const ff = document.getElementById('d2').value;
+            
+            const allD = [...new Set(raw.map(l => l._d))].sort();
+            const sums = raw.reduce((a, c) => { a[c._d] = (a[c._d] || 0) + n(c._v); return a; }, {});
+            
+            let filtered = raw.filter(l => (!fi || l._d >= fi) && (!ff || l._d <= ff));
+            if(!filtered.length) return;
+            filtered.sort((a,b) => b._d.localeCompare(a._d));
+            const viewD = [...new Set(filtered.map(l => l._d))].sort();
+            const ultimaData = viewD[viewD.length-1];
+
+            const gAno = calcularRendimento(allD.filter(d => d.startsWith('2026')));
+            const gFiltro = calcularRendimento(viewD);
+
+            let vMedia = 0, diasUteis = 0;
+            if(fi && ff) {
+                diasUteis = contarDiasUteis(fi, ff);
+                vMedia = gFiltro / diasUteis;
+            }
+
+            const cols = ['VEÍCULO LEGAL','DT. VENCTO.','DT. ATUAL','INDEXADOR','QUANTIDADE','VL 550','VL 238','POSIÇÃO','STATUS DA POSIÇÃO','FINALIDADE ESTOQUE','VL MERCADO','PAPEL','PU 238', 'PU 550', 'PU MERCADO'];
+            let h = '', last = '';
+            const qtsTotaisPorVenc = {};
+            const resumoMap = {};
+            const mensalMap = {};
+
+            // Lógica de Agrupamento Mensal
+            viewD.forEach(dataRef => {
+                const mesAno = dataRef.substring(0, 7);
+                if(!mensalMap[mesAno]) mensalMap[mesAno] = { rend: 0, saldo: 0, ultima: "" };
+                
+                // Soma rendimento do dia no mês
+                let idx = allD.indexOf(dataRef);
+                if(idx > 0) {
+                    let ontem = raw.filter(p => p._d === allD[idx-1]);
+                    raw.filter(p => p._d === dataRef).forEach(ph => {
+                        let po = ontem.find(p => p['PAPEL'] === ph['PAPEL'] && p['VEÍCULO LEGAL'] === ph['VEÍCULO LEGAL'] && p['POSIÇÃO'] === ph['POSIÇÃO']);
+                        if(po) mensalMap[mesAno].rend += n(ph._q) * (n(ph['PU 238']) - n(po['PU 238']));
+                    });
+                }
+                // Saldo do fechamento do mês
+                if(dataRef > mensalMap[mesAno].ultima) {
+                    mensalMap[mesAno].ultima = dataRef;
+                    mensalMap[mesAno].saldo = raw.filter(l => l._d === dataRef).reduce((acc, curr) => acc + n(curr._v), 0);
+                }
+            });
+
+            filtered.forEach(l => {
+                if(l._d !== last) {
+                    let idx = allD.indexOf(l._d);
+                    let gDia = 0;
+                    if(idx > 0) {
+                        let ontem = raw.filter(p => p._d === allD[idx-1]);
+                        raw.filter(p => p._d === l._d).forEach(ph => {
+                            let po = ontem.find(p => p['PAPEL'] === ph['PAPEL'] && p['VEÍCULO LEGAL'] === ph['VEÍCULO LEGAL'] && p['POSIÇÃO'] === ph['POSIÇÃO']);
+                            if(po) gDia += n(ph._q) * (n(ph['PU 238']) - n(po['PU 238']));
+                        });
+                    }
+                    h += `<tr class="row-group"><td colspan="${cols.length}">📅 ${br(l._d)} <span style="margin-left:20px; color:${gDia>=0? 'green':'red'}">Rendimento no Dia: ${gDia.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span></td></tr>`;
+                    last = l._d;
+                }
+                if(l._d === ultimaData) {
+                    let vnc = br(l._vc) || 'S/V';
+                    let pos = String(l['POSIÇÃO'] || 'N/A').trim();
+                    qtsTotaisPorVenc[vnc] = (qtsTotaisPorVenc[vnc] || 0) + n(l._q);
+                    let chave = `${l._vc}_${pos}`;
+                    if(!resumoMap[chave]) resumoMap[chave] = { venc: l._vc, pos: pos, total: 0, qtd: 0 };
+                    resumoMap[chave].total += n(l._v);
+                    resumoMap[chave].qtd += n(l._q);
+                }
+                h += '<tr>' + cols.map(c => {
+                    let val = l[c] || '-';
+                    if(c.includes('VL') || c.includes('PU')) return `<td class="money-col">${n(val).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>`;
+                    if(c.includes('DT')) return `<td>${br(dIso(val))}</td>`;
+                    if(c === 'QUANTIDADE' || c === 'QTDE') return `<td>${n(val).toLocaleString('pt-BR')}</td>`;
+                    return `<td>${val}</td>`;
+                }).join('') + '</tr>';
+            });
+
+            // Render Resumo Carteira
+            document.getElementById('resumoBody').innerHTML = Object.values(resumoMap).sort((a,b) => a.venc.localeCompare(b.venc)).map(r => `
+                <tr><td>${br(r.venc)}</td><td>${r.pos}</td><td style="text-align:right">${Math.round(r.qtd).toLocaleString('pt-BR')}</td><td style="text-align:right">R$ ${r.total.toLocaleString('pt-BR', {minimumFractionDigits:2})}</td></tr>
+            `).join('');
+
+            // Render Resumo Mensal
+            document.getElementById('mensalBody').innerHTML = Object.keys(mensalMap).sort().reverse().map(m => {
+                const [ano, mes] = m.split('-');
+                return `<tr>
+                    <td>${mes}/${ano}</td>
+                    <td style="text-align:right; color:${mensalMap[m].rend >=0 ? 'green' : 'red'}">${mensalMap[m].rend.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
+                    <td style="text-align:right">${mensalMap[m].saldo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
+                </tr>`;
+            }).join('');
+
+            document.getElementById('vVenc').innerHTML = Object.keys(qtsTotaisPorVenc).sort().map(k => `<div class="venc-badge">${k}: ${Math.round(qtsTotaisPorVenc[k]).toLocaleString('pt-BR')}</div>`).join('');
+            document.getElementById('hTab').innerHTML = `<tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr>`;
+            document.getElementById('bTab').innerHTML = h;
+            
+            document.getElementById('vTotal').innerText = (sums[ultimaData] || 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+            document.getElementById('vGanho').innerText = gFiltro.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+            document.getElementById('vGanho').style.color = gFiltro >= 0 ? 'var(--success)' : 'var(--danger)';
+            document.getElementById('vMedia').innerText = vMedia.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+            document.getElementById('vMedia').style.color = vMedia >= 0 ? 'var(--success)' : 'var(--danger)';
+            document.getElementById('vDiasUteis').innerText = diasUteis > 0 ? `${diasUteis} dias úteis` : "-- dias";
+            document.getElementById('vGanhoAno').innerText = gAno.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+            document.getElementById('vGanhoAno').style.color = gAno >= 0 ? 'var(--success)' : 'var(--danger)';
+            document.getElementById('vDataPos').innerText = br(ultimaData);
+        }
+
+        function clearDB() { if(confirm("Limpar NUVEM?")) { raw = []; docRef.delete().then(() => location.reload()); } }
+        document.getElementById('passInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') checkPass(); });
+    </script>
+</body>
+</html>
