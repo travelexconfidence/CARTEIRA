@@ -12,12 +12,7 @@
         }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; padding: 8px; color: var(--text); font-size: 11px; }
         
-        #lock-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--primary); color: white;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            z-index: 9999;
-        }
+        #lock-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--primary); color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; }
         #lock-screen input { padding: 12px; border-radius: 4px; border: none; margin-top: 15px; width: 220px; text-align: center; font-size: 14px; }
         #lock-screen button { margin-top: 15px; padding: 10px 30px; cursor: pointer; background: var(--success); color: white; border: none; border-radius: 4px; font-weight: bold; text-transform: uppercase; }
         .hidden { display: none !important; }
@@ -28,24 +23,21 @@
         .logo-wrapper img { max-height: 30px; max-width: 120px; object-fit: contain; }
         .app-title { font-size: 15px; font-weight: bold; text-transform: uppercase; border-left: 1px solid rgba(255,255,255,0.3); padding-left: 12px; }
         
-        .dashboard { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 8px; }
-        @media (max-width: 1000px) { .dashboard { grid-template-columns: repeat(3, 1fr); } }
-
-        .card { background: var(--card); padding: 10px; border-radius: 6px; border: 1px solid var(--border); box-shadow: 2px 2px 5px rgba(0,0,0,0.05); }
+        .dashboard { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+        .card { background: var(--card); padding: 10px; border-radius: 6px; border: 1px solid var(--border); box-shadow: 2px 2px 5px rgba(0,0,0,0.05); flex: 1 1 140px; min-width: 140px; }
         .card label { font-size: 9px; color: #555; font-weight: bold; text-transform: uppercase; display: block; margin-bottom: 4px; }
-        .card .value { font-size: 14px; font-weight: 800; color: var(--primary); }
+        .card .value { font-size: 13px; font-weight: 800; color: var(--primary); }
         .card .sub-value { font-size: 9px; color: #777; display: block; margin-top: 2px; }
         
         .venc-list { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
         .venc-badge { background: #e9ecef; padding: 2px 6px; border-radius: 3px; border: 1px solid #adb5bd; font-size: 10px; font-weight: bold; color: var(--primary); }
         
-        /* Estilos dos Cards de Resumo */
         .resumo-card, .mensal-card { margin-bottom: 10px; background: #ffffff; border-radius: 6px; overflow: hidden; box-shadow: 2px 2px 5px rgba(0,0,0,0.05); }
         .resumo-card { border: 2px solid var(--accent); }
         .mensal-card { border: 2px solid var(--monthly); }
-        
-        .resumo-header { background: var(--accent); color: white; padding: 6px 12px; font-weight: bold; font-size: 11px; text-transform: uppercase; }
-        .mensal-header { background: var(--monthly); color: white; padding: 6px 12px; font-weight: bold; font-size: 11px; text-transform: uppercase; }
+        .resumo-header, .mensal-header { color: white; padding: 6px 12px; font-weight: bold; font-size: 11px; text-transform: uppercase; }
+        .resumo-header { background: var(--accent); }
+        .mensal-header { background: var(--monthly); }
         
         .resumo-table { width: 100%; border-collapse: collapse; }
         .resumo-table th { background: #f8f9fa; color: #333; font-size: 9px; padding: 6px; border-bottom: 2px solid #ddd; text-align: left; }
@@ -55,7 +47,7 @@
         .btn { padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; border: 1px solid #adb5bd; font-size: 10px; background: white; text-transform: uppercase; }
         .btn-import { background: var(--success); color: white; border: none; }
         
-        .table-container { background: var(--card); border-radius: 6px; border: 1px solid var(--border); overflow: auto; max-height: 45vh; }
+        .table-container { background: var(--card); border-radius: 6px; border: 1px solid var(--border); overflow: auto; max-height: 40vh; }
         table { width: 100%; border-collapse: collapse; }
         thead th { position: sticky; top: 0; background: #343a40; color: white; font-size: 9px; padding: 6px 4px; text-transform: uppercase; z-index: 5; }
         tbody td { padding: 4px 6px; border-bottom: 1px solid #dee2e6; text-align: right; white-space: nowrap; font-size: 10px; font-weight: 500; }
@@ -98,7 +90,8 @@
         <div class="card"><label>POSIÇÃO TOTAL</label><div id="vTotal" class="value">R$ 0,00</div></div>
         <div class="card"><label>RENDIMENTO ANO (2026)</label><div id="vGanhoAno" class="value">R$ 0,00</div></div>
         <div class="card"><label>RENDIMENTO NO PERÍODO</label><div id="vGanho" class="value">R$ 0,00</div></div>
-        <div class="card"><label>MÉDIA DIÁRIA (ÚTEIS)</label><div id="vMedia" class="value">R$ 0,00</div><div id="vDiasUteis" class="sub-value">-- dias</div></div>
+        <div class="card"><label>MÉDIA DIÁRIA (ÚTEIS)</label><div id="vMedia" class="value">R$ 0,00</div><div id="vDiasUteis" class="sub-value">-- dias úteis</div></div>
+        <div class="card"><label>MÉDIA MENSAL (ÚTEIS)</label><div id="vMediaMensal" class="value">R$ 0,00</div><div id="vLabelMensal" class="sub-value">Projeção do Mês</div></div>
         <div class="card"><label>DATA DA POSIÇÃO</label><div id="vDataPos" class="value">--/--/----</div></div>
         <div class="card"><label>VENCIMENTOS (QTDE)</label><div id="vVenc" class="venc-list">...</div></div>
     </div>
@@ -194,14 +187,19 @@
 
         function br(d) { return d ? d.split('-').reverse().join('/') : "--"; }
 
+        // FUNÇÃO DE CONTAGEM DE DIAS ÚTEIS COM FERIADOS NACIONAIS
         function contarDiasUteis(inicio, fim) {
             let dIni = new Date(inicio + "T00:00:00");
             let dFim = new Date(fim + "T00:00:00");
+            const feriadosFixos = ['01/01', '21/04', '01/05', '07/09', '12/10', '02/11', '15/11', '20/11', '25/12'];
             let count = 0;
             let atual = new Date(dIni);
             while (atual <= dFim) {
                 let diaSemana = atual.getDay();
-                if (diaSemana !== 0 && diaSemana !== 6) count++;
+                let diaMes = atual.getDate().toString().padStart(2, '0') + '/' + (atual.getMonth() + 1).toString().padStart(2, '0');
+                if (diaSemana !== 0 && diaSemana !== 6 && !feriadosFixos.includes(diaMes)) {
+                    count++;
+                }
                 atual.setDate(atual.getDate() + 1);
             }
             return count || 1;
@@ -237,10 +235,11 @@
 
         function calcularRendimento(datas) {
             let totalRendimento = 0;
+            const sortedAllD = [...new Set(raw.map(l => l._d))].sort();
             datas.forEach(dataHoje => {
-                let idx = [...new Set(raw.map(l => l._d))].sort().indexOf(dataHoje);
+                let idx = sortedAllD.indexOf(dataHoje);
                 if (idx > 0) {
-                    let dataOntem = [...new Set(raw.map(l => l._d))].sort()[idx-1];
+                    let dataOntem = sortedAllD[idx-1];
                     let hoje = raw.filter(l => l._d === dataHoje);
                     let ontem = raw.filter(l => l._d === dataOntem);
                     hoje.forEach(h => {
@@ -258,21 +257,25 @@
             const ff = document.getElementById('d2').value;
             
             const allD = [...new Set(raw.map(l => l._d))].sort();
-            const sums = raw.reduce((a, c) => { a[c._d] = (a[c._d] || 0) + n(c._v); return a; }, {});
-            
-            let filtered = raw.filter(l => (!fi || l._d >= fi) && (!ff || l._d <= ff));
+            const filtered = raw.filter(l => (!fi || l._d >= fi) && (!ff || l._d <= ff));
             if(!filtered.length) return;
-            filtered.sort((a,b) => b._d.localeCompare(a._d));
+
             const viewD = [...new Set(filtered.map(l => l._d))].sort();
             const ultimaData = viewD[viewD.length-1];
-
-            const gAno = calcularRendimento(allD.filter(d => d.startsWith('2026')));
             const gFiltro = calcularRendimento(viewD);
+            const gAno = calcularRendimento(allD.filter(d => d.startsWith('2026')));
 
-            let vMedia = 0, diasUteis = 0;
+            let vMediaDiaria = 0, diasUteisPeriodo = 0, vMediaMensal = 0, diasUteisMesInteiro = 21;
+            
             if(fi && ff) {
-                diasUteis = contarDiasUteis(fi, ff);
-                vMedia = gFiltro / diasUteis;
+                diasUteisPeriodo = contarDiasUteis(fi, ff);
+                vMediaDiaria = gFiltro / (diasUteisPeriodo || 1);
+                
+                let dataFim = new Date(ff + "T12:00:00");
+                let primeiroDiaMes = ff.substring(0, 8) + "01";
+                let ultimoDiaMes = new Date(dataFim.getFullYear(), dataFim.getMonth() + 1, 0).toISOString().split('T')[0];
+                diasUteisMesInteiro = contarDiasUteis(primeiroDiaMes, ultimoDiaMes);
+                vMediaMensal = vMediaDiaria * diasUteisMesInteiro;
             }
 
             const cols = ['VEÍCULO LEGAL','DT. VENCTO.','DT. ATUAL','INDEXADOR','QUANTIDADE','VL 550','VL 238','POSIÇÃO','STATUS DA POSIÇÃO','FINALIDADE ESTOQUE','VL MERCADO','PAPEL','PU 238', 'PU 550', 'PU MERCADO'];
@@ -281,12 +284,9 @@
             const resumoMap = {};
             const mensalMap = {};
 
-            // Lógica de Agrupamento Mensal
             viewD.forEach(dataRef => {
                 const mesAno = dataRef.substring(0, 7);
                 if(!mensalMap[mesAno]) mensalMap[mesAno] = { rend: 0, saldo: 0, ultima: "" };
-                
-                // Soma rendimento do dia no mês
                 let idx = allD.indexOf(dataRef);
                 if(idx > 0) {
                     let ontem = raw.filter(p => p._d === allD[idx-1]);
@@ -295,14 +295,13 @@
                         if(po) mensalMap[mesAno].rend += n(ph._q) * (n(ph['PU 238']) - n(po['PU 238']));
                     });
                 }
-                // Saldo do fechamento do mês
                 if(dataRef > mensalMap[mesAno].ultima) {
                     mensalMap[mesAno].ultima = dataRef;
                     mensalMap[mesAno].saldo = raw.filter(l => l._d === dataRef).reduce((acc, curr) => acc + n(curr._v), 0);
                 }
             });
 
-            filtered.forEach(l => {
+            filtered.sort((a,b) => b._d.localeCompare(a._d)).forEach(l => {
                 if(l._d !== last) {
                     let idx = allD.indexOf(l._d);
                     let gDia = 0;
@@ -334,12 +333,10 @@
                 }).join('') + '</tr>';
             });
 
-            // Render Resumo Carteira
             document.getElementById('resumoBody').innerHTML = Object.values(resumoMap).sort((a,b) => a.venc.localeCompare(b.venc)).map(r => `
                 <tr><td>${br(r.venc)}</td><td>${r.pos}</td><td style="text-align:right">${Math.round(r.qtd).toLocaleString('pt-BR')}</td><td style="text-align:right">R$ ${r.total.toLocaleString('pt-BR', {minimumFractionDigits:2})}</td></tr>
             `).join('');
 
-            // Render Resumo Mensal
             document.getElementById('mensalBody').innerHTML = Object.keys(mensalMap).sort().reverse().map(m => {
                 const [ano, mes] = m.split('-');
                 return `<tr>
@@ -353,14 +350,20 @@
             document.getElementById('hTab').innerHTML = `<tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr>`;
             document.getElementById('bTab').innerHTML = h;
             
-            document.getElementById('vTotal').innerText = (sums[ultimaData] || 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-            document.getElementById('vGanho').innerText = gFiltro.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-            document.getElementById('vGanho').style.color = gFiltro >= 0 ? 'var(--success)' : 'var(--danger)';
-            document.getElementById('vMedia').innerText = vMedia.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-            document.getElementById('vMedia').style.color = vMedia >= 0 ? 'var(--success)' : 'var(--danger)';
-            document.getElementById('vDiasUteis').innerText = diasUteis > 0 ? `${diasUteis} dias úteis` : "-- dias";
+            const totalPosicao = raw.filter(l => l._d === ultimaData).reduce((acc, curr) => acc + n(curr._v), 0);
+            document.getElementById('vTotal').innerText = totalPosicao.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
             document.getElementById('vGanhoAno').innerText = gAno.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
             document.getElementById('vGanhoAno').style.color = gAno >= 0 ? 'var(--success)' : 'var(--danger)';
+            document.getElementById('vGanho').innerText = gFiltro.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+            document.getElementById('vGanho').style.color = gFiltro >= 0 ? 'var(--success)' : 'var(--danger)';
+            
+            document.getElementById('vMedia').innerText = vMediaDiaria.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+            document.getElementById('vMedia').style.color = vMediaDiaria >= 0 ? 'var(--success)' : 'var(--danger)';
+            document.getElementById('vMediaMensal').innerText = vMediaMensal.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+            document.getElementById('vMediaMensal').style.color = vMediaMensal >= 0 ? 'var(--success)' : 'var(--danger)';
+
+            document.getElementById('vDiasUteis').innerText = `${diasUteisPeriodo} d.ú. no período (desc. feriados)`;
+            document.getElementById('vLabelMensal').innerText = `Projetado para ${diasUteisMesInteiro} d.ú. do mês`;
             document.getElementById('vDataPos').innerText = br(ultimaData);
         }
 
