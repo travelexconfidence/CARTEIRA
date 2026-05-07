@@ -39,7 +39,6 @@
         .venc-list { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
         .venc-badge { background: #e9ecef; padding: 2px 6px; border-radius: 3px; border: 1px solid #adb5bd; font-size: 10px; font-weight: bold; color: var(--primary); }
         
-        /* Estilos dos Cards de Resumo */
         .resumo-card, .mensal-card { margin-bottom: 10px; background: #ffffff; border-radius: 6px; overflow: hidden; box-shadow: 2px 2px 5px rgba(0,0,0,0.05); }
         .resumo-card { border: 2px solid var(--accent); }
         .mensal-card { border: 2px solid var(--monthly); }
@@ -67,6 +66,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 </head>
 <body>
+
     <div id="lock-screen">
         <div style="background:white; padding:15px; border-radius:8px; margin-bottom:20px;">
             <img src="https://www.travelexbank.com.br/wp-content/uploads/2021/05/logo-travelex-bank.png" style="width:180px;">
@@ -140,6 +140,7 @@
     </div>
 
     <script>
+        // Configuração do Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyBcHysAwUcD9ii0UmDJGnNkHC69Y3WCbQk",
             authDomain: "carteira-5cef6.firebaseapp.com",
@@ -151,33 +152,57 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const docRef = db.collection("registros").doc("consolidado_v32");
+        
         let raw = [];
 
+        // Controle de Acesso
         function checkPass() {
             if(document.getElementById('passInput').value === "123456") {
                 document.getElementById('lock-screen').classList.add('hidden');
                 loadFromCloud();
-            } else { document.getElementById('errorMsg').style.display = 'block'; }
+            } else { 
+                document.getElementById('errorMsg').style.display = 'block'; 
+            }
         }
 
+        // Carregar da Nuvem
         async function loadFromCloud() {
             try {
                 const doc = await docRef.get();
-                if (doc.exists) { raw = doc.data().conteudo || []; draw(); }
+                if (doc.exists) { 
+                    raw = doc.data().conteudo || []; 
+                    console.log("Dados carregados da nuvem:", raw.length);
+                    draw(); 
+                }
             } catch (e) { console.error("Erro Nuvem:", e); }
             const savedLogo = localStorage.getItem('tvx_logo_v32');
             if(savedLogo) document.getElementById('logoImg').src = savedLogo;
         }
 
-        async function saveToCloud() { try { await docRef.set({ conteudo: raw }); } catch (e) {}}
+        // SALVAR NA NUVEM (CORRIGIDO)
+        async function saveToCloud() { 
+            if (!raw || raw.length === 0) return;
+            try { 
+                await docRef.set({ conteudo: raw }); 
+                console.log("✅ Sincronizado com a nuvem!");
+            } catch (e) {
+                console.error("❌ Erro ao salvar:", e);
+                alert("Erro ao salvar dados na nuvem!");
+            }
+        }
 
+        // Upload de Logo
         function upLogo(i) {
             const f = i.files[0]; if(!f) return;
             const r = new FileReader();
-            r.onload = (e) => { document.getElementById('logoImg').src = e.target.result; localStorage.setItem('tvx_logo_v32', e.target.result); };
+            r.onload = (e) => { 
+                document.getElementById('logoImg').src = e.target.result; 
+                localStorage.setItem('tvx_logo_v32', e.target.result); 
+            };
             r.readAsDataURL(f);
         }
 
+        // Funções de Formatação
         function n(v) {
             if(!v) return 0; if(typeof v === 'number') return v;
             let s = String(v).replace('R$', '').replace(/\./g, '').replace(',', '.').replace(/[^\d.-]/g, '').trim();
@@ -188,7 +213,10 @@
             if(!v) return ""; 
             if(typeof v === 'number') return new Date(Math.round((v-25569)*86400*1000)).toISOString().split('T')[0];
             let s = String(v).trim(); 
-            if(s.includes('/')) { let p = s.split('/'); return p[0].length===4 ? `${p[0]}-${p[1]}-${p[2]}` : `${p[2]}-${p[1]}-${p[0]}`; }
+            if(s.includes('/')) { 
+                let p = s.split('/'); 
+                return p[0].length===4 ? `${p[0]}-${p[1]}-${p[2]}` : `${p[2]}-${p[1]}-${p[0]}`; 
+            }
             return s;
         }
 
@@ -207,14 +235,18 @@
             return count || 1;
         }
 
+        // LER EXCEL (CORRIGIDO)
         function readXls(fs) {
             if(!fs.length) return;
+            let processados = 0;
+
             Array.from(fs).forEach(f => {
                 const r = new FileReader();
-                r.onload = (e) => {
+                r.onload = async (e) => {
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, {type:'array'});
                     const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+                    
                     const m = rows.map(i => ({
                         ...i,
                         _d: dIso(i['DT. ATUAL'] || i['DATA'] || ""),
@@ -226,15 +258,23 @@
                         'PU MERCADO': i['PU MERCADO'] || i['PU_MERCADO'] || 0,
                         'FINALIDADE ESTOQUE': i['FINALIDADE ESTOQUE'] || i['FINALIDADE_ESTOQUE'] || '-'
                     })).filter(x => x._d && x._v !== 0);
+
+                    // Adiciona os novos dados ao array existente
                     raw = raw.concat(m);
-                    saveToCloud();
-                    draw();
+                    processados++;
+
+                    // Só salva na nuvem após processar TODOS os arquivos selecionados
+                    if(processados === fs.length) {
+                        await saveToCloud();
+                        draw();
+                    }
                 };
                 r.readAsArrayBuffer(f);
             });
             document.getElementById('fileInp').value = "";
         }
 
+        // Lógica de Rendimento
         function calcularRendimento(datas) {
             let totalRendimento = 0;
             datas.forEach(dataHoje => {
@@ -252,14 +292,15 @@
             return totalRendimento;
         }
 
+        // Desenhar Interface
         function draw() {
             if(!raw.length) return;
             const fi = document.getElementById('d1').value;
             const ff = document.getElementById('d2').value;
-            
+                        
             const allD = [...new Set(raw.map(l => l._d))].sort();
             const sums = raw.reduce((a, c) => { a[c._d] = (a[c._d] || 0) + n(c._v); return a; }, {});
-            
+                        
             let filtered = raw.filter(l => (!fi || l._d >= fi) && (!ff || l._d <= ff));
             if(!filtered.length) return;
             filtered.sort((a,b) => b._d.localeCompare(a._d));
@@ -281,12 +322,11 @@
             const resumoMap = {};
             const mensalMap = {};
 
-            // Lógica de Agrupamento Mensal
+            // Agrupamento Mensal
             viewD.forEach(dataRef => {
                 const mesAno = dataRef.substring(0, 7);
                 if(!mensalMap[mesAno]) mensalMap[mesAno] = { rend: 0, saldo: 0, ultima: "" };
-                
-                // Soma rendimento do dia no mês
+                                
                 let idx = allD.indexOf(dataRef);
                 if(idx > 0) {
                     let ontem = raw.filter(p => p._d === allD[idx-1]);
@@ -295,7 +335,6 @@
                         if(po) mensalMap[mesAno].rend += n(ph._q) * (n(ph['PU 238']) - n(po['PU 238']));
                     });
                 }
-                // Saldo do fechamento do mês
                 if(dataRef > mensalMap[mesAno].ultima) {
                     mensalMap[mesAno].ultima = dataRef;
                     mensalMap[mesAno].saldo = raw.filter(l => l._d === dataRef).reduce((acc, curr) => acc + n(curr._v), 0);
@@ -334,12 +373,10 @@
                 }).join('') + '</tr>';
             });
 
-            // Render Resumo Carteira
             document.getElementById('resumoBody').innerHTML = Object.values(resumoMap).sort((a,b) => a.venc.localeCompare(b.venc)).map(r => `
                 <tr><td>${br(r.venc)}</td><td>${r.pos}</td><td style="text-align:right">${Math.round(r.qtd).toLocaleString('pt-BR')}</td><td style="text-align:right">R$ ${r.total.toLocaleString('pt-BR', {minimumFractionDigits:2})}</td></tr>
             `).join('');
 
-            // Render Resumo Mensal
             document.getElementById('mensalBody').innerHTML = Object.keys(mensalMap).sort().reverse().map(m => {
                 const [ano, mes] = m.split('-');
                 return `<tr>
